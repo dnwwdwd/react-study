@@ -1,24 +1,40 @@
-// 项目的根组件
-// App -> index.js -> public/index.html(root)  => App 根组件被导入到 index.js，然后渲染到 index.html 的 root 节点上
+import React, {createContext, useContext} from "react";
 
-// 导入样式
-import './index.css'
-const style = {
-    color: 'red',
-    fontSize: '50px',
-};
+// App -> A -> B
+
+// 1.createContext 方法创建一个上下文对象
+const MsgContext = createContext();
+// 2.在顶层组件通过 Provider 组件提供数据
+// 3.在底层组件通过 useContext 钩子函数使用数据
+
+function A () {
+    return (
+        <div>
+            this is A component
+            <B />
+        </div>
+    );
+}
+
+function B () {
+    const msg = useContext(MsgContext);
+    return (
+        <div>
+            this is B component
+        </div>
+    );
+}
 
 function App() {
-
-  return (
-    <div className="App">
-        {/*行内控制*/}
-        <span style={{color: 'red', fontSize: '50px'}}>this is span</span>
-        <span style={style}>this is span</span>
-        {/*通过 class 类名控制*/}
-        <span className='foo'>this is foo</span>
-    </div>
-  );
+    const msg = 'this is app msg';
+    return (
+        <div className="App">
+            <MsgContext.Provider value={msg}>
+                this is App
+                <A msg={msg}/>
+            </MsgContext.Provider>
+        </div>
+    );
 }
 
 export default App;
