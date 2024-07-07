@@ -204,7 +204,7 @@ export default App;
 
 显示：我是三图文章
 
-### 3. React 基础事件绑定
+## 3. React 基础事件绑定
 
 **语法**：on + 事件名 = {事件处理程序/函数名}，遵循驼峰命令
 
@@ -314,7 +314,7 @@ export default App;
 
 
 
-### 4.  React组件
+## 4.  React组件
 
 在 React 中，一个组件就是**一个首字母大写的函数**，内部含有组件的逻辑和 UI，渲染组件只需**将组件当做标签书写即可**
 
@@ -350,7 +350,7 @@ function App() {
 }
 ```
 
-### 5. useState 基础使用
+## 5. useState 基础使用
 
 其是 React 的一个 Hook，**允许我们向组件添加一个状态变量**，从而控制影响组件的渲染结果
 
@@ -368,7 +368,7 @@ count 的值不可直接修改，只能通过 setCount 修改
 2. 数组的第一个参数是状态变量，第二个参数是 set 函数用来修改状态变量
 3. useState 的参数将作为 count 的初始值
 
-#### 一个 useState 的小 demo
+### 一个 useState 的小 demo
 
 App.js：
 
@@ -401,7 +401,7 @@ function App() {
 export default App;
 ```
 
-#### 拓展 dem
+### 拓展 demo
 
 App.js：
 
@@ -437,7 +437,7 @@ function App() {
 export default App;
 ```
 
-### 6. 如何修改组件样式
+## 6. 如何修改组件样式
 
 ![image-20240706212148864](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240706212148.png)
 
@@ -478,9 +478,9 @@ index.css：
 }
 ```
 
-### 7. B 站评论案例
+## 7. B 站评论案例
 
-#### 7.1 列表渲染
+### 7.1 列表渲染
 
 App.js：
 
@@ -947,4 +947,1343 @@ App.scss：
 
 ![image-20240706224956160](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240706224956.png)
 
-#### 7.2 删除功能实现
+### 7.2 删除功能实现
+
+需求：
+
+1. 只有自己的评论才可以删除
+2. 点击删除按钮，删除当前评论，列表中不再显示
+
+核心思路：
+
+1. 删除显示 - 条件渲染
+2. 删除功能 - 拿到当前项 id 以 id 为条件对评论列表做过滤
+
+### 7.3 渲染 Tab + 点击高亮实现
+
+需求：点击哪个 tab 项，哪个做高亮处理
+
+核心思路：
+
+点击谁就把谁的type(独一无二的标识)记录下来，然后和遍历时的每一项的type做匹配，谁匹配到就设置负责高亮的类名
+
+```react
+import './App.scss'
+import avatar from './images/bozai.png'
+import {useState} from "react";
+
+/**
+ * 评论列表的渲染和操作
+ *
+ * 1. 根据状态渲染评论列表
+ * 2. 删除评论
+ */
+
+// 评论列表数据
+const list = [
+  {
+    // 评论id
+    rpid: 3,
+    // 用户信息
+    user: {
+      uid: '13258165',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '周杰伦',
+    },
+    // 评论内容
+    content: '哎哟，不错哦',
+    // 评论时间
+    ctime: '10-18 08:15',
+    like: 88,
+  },
+  {
+    rpid: 2,
+    user: {
+      uid: '36080105',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '许嵩',
+    },
+    content: '我寻你千百度 日出到迟暮',
+    ctime: '11-13 11:29',
+    like: 88,
+  },
+  {
+    rpid: 1,
+    user: {
+      uid: '30009257',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '黑马前端',
+    },
+    content: '学前端就来黑马',
+    ctime: '10-19 09:00',
+    like: 66,
+  },
+]
+
+
+// 当前登录用户信息
+const user = {
+  // 用户id
+  uid: '30009257',
+  // 用户头像
+  avatar,
+  // 用户昵称
+  uname: '黑马前端',
+}
+
+/**
+ * 导航 Tab 的渲染和操作
+ *
+ * 1. 渲染导航 Tab 和高亮
+ * 2. 评论列表排序
+ *  最热 => 喜欢数量降序
+ *  最新 => 创建时间降序
+ */
+
+// 导航 Tab 数组
+const tabs = [
+  { type: 'hot', text: '最热' },
+  { type: 'time', text: '最新' },
+]
+
+const App = () => {
+
+  // 渲染评论列表
+  // 1.使用 useState 维护 list
+  const [commentList, setCommentList] = useState(list);
+
+  // 删除功能
+  const handleDel = (id) => {
+    // 对 commentList 进行过滤
+    setCommentList(commentList.filter(item => item.rpid !== id));
+  };
+
+  // tab 切换功能
+  // 1.点击谁就把谁的 type 记录下来
+  // 2.通过记录 type 和每一项遍历时的 type 做匹配 控制激活类名的显示
+  const [type, setType] = useState('hot');
+  const handleTabChange = (type) => {
+    console.log(type);
+    setType(type);
+  };
+
+  return (
+    <div className="app">
+      {/* 导航 Tab */}
+      <div className="reply-navigation">
+        <ul className="nav-bar">
+          <li className="nav-title">
+            <span className="nav-title-text">评论</span>
+            {/* 评论数量 */}
+            <span className="total-reply">{10}</span>
+          </li>
+          <li className="nav-sort">
+            {/* 高亮类名： active */}
+            {tabs.map(item =>
+                <span key={item.type}
+                      onClick={() => handleTabChange(item.type)}
+                      className={`nav-item ${type === item.type && 'active'}`}>
+                  {item.text}
+                </span>)}
+          </li>
+        </ul>
+      </div>
+
+      <div className="reply-wrap">
+        {/* 发表评论 */}
+        <div className="box-normal">
+          {/* 当前用户头像 */}
+          <div className="reply-box-avatar">
+            <div className="bili-avatar">
+              <img className="bili-avatar-img" src={avatar} alt="用户头像" />
+            </div>
+          </div>
+          <div className="reply-box-wrap">
+            {/* 评论框 */}
+            <textarea
+              className="reply-box-textarea"
+              placeholder="发一条友善的评论"
+            />
+            {/* 发布按钮 */}
+            <div className="reply-box-send">
+              <div className="send-text">发布</div>
+            </div>
+          </div>
+        </div>
+        {/* 评论列表 */}
+        <div className="reply-list">
+          {/* 评论项 */}
+          {commentList.map(item => (
+              <div key={item.rpid} className="reply-item">
+                {/* 头像 */}
+                <div className="root-reply-avatar">
+                  <div className="bili-avatar">
+                    <img
+                        className="bili-avatar-img"
+                        alt=""
+                        src={item.user.avatar}
+                    />
+                  </div>
+                </div>
+
+                <div className="content-wrap">
+                  {/* 用户名 */}
+                  <div className="user-info">
+                    <div className="user-name">{item.user.uname}</div>
+                  </div>
+                  {/* 评论内容 */}
+                  <div className="root-reply">
+                    <span className="reply-content">{item.content}</span>
+                    <div className="reply-info">
+                      {/* 评论时间 */}
+                      <span className="reply-time">{item.ctime}</span>
+                      {/* 评论数量 */}
+                      <span className="reply-time">点赞数:{item.like}</span>
+                      {/*条件：user.id === item.user.id*/}
+                      {user.uid === item.user.uid  && <span className="delete-btn" onClick={() => handleDel(item.rpid)}>删除</span>}
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ))}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
+```
+
+### 7.4 排序功能
+
+需求：点击最新，评论列表按照创建时间倒序排列（新的在前），点击最热按照点赞数排序（多的在前)
+
+核心思路：把评论列表状态数据进行不同的排序处理，当成新值传给 set 函数重新渲染视图 UI
+
+#### **lodash 库**
+
+安装：
+
+```bash
+npm install lodash
+```
+
+引入：
+
+```js
+import _ from 'lodash';
+```
+
+使用：
+
+```js
+setCommentList(_.orderBy(commentList, 'like', 'desc'));
+```
+
+App.js：
+
+```react
+import './App.scss'
+import avatar from './images/bozai.png'
+import {useState} from "react";
+import _ from 'lodash';
+/**
+ * 评论列表的渲染和操作
+ *
+ * 1. 根据状态渲染评论列表
+ * 2. 删除评论
+ */
+
+// 评论列表数据
+const list = [
+  {
+    // 评论id
+    rpid: 3,
+    // 用户信息
+    user: {
+      uid: '13258165',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '周杰伦',
+    },
+    // 评论内容
+    content: '哎哟，不错哦',
+    // 评论时间
+    ctime: '10-20 08:15',
+    like: 38,
+  },
+  {
+    rpid: 2,
+    user: {
+      uid: '36080105',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '许嵩',
+    },
+    content: '我寻你千百度 日出到迟暮',
+    ctime: '09-13 11:29',
+    like: 88,
+  },
+  {
+    rpid: 1,
+    user: {
+      uid: '30009257',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '黑马前端',
+    },
+    content: '学前端就来黑马',
+    ctime: '10-19 09:00',
+    like: 66,
+  },
+]
+
+
+// 当前登录用户信息
+const user = {
+  // 用户id
+  uid: '30009257',
+  // 用户头像
+  avatar,
+  // 用户昵称
+  uname: '黑马前端',
+}
+
+/**
+ * 导航 Tab 的渲染和操作
+ *
+ * 1. 渲染导航 Tab 和高亮
+ * 2. 评论列表排序
+ *  最热 => 喜欢数量降序
+ *  最新 => 创建时间降序
+ */
+
+// 导航 Tab 数组
+const tabs = [
+  { type: 'hot', text: '最热' },
+  { type: 'time', text: '最新' },
+]
+
+const App = () => {
+
+  // 渲染评论列表
+  // 1.使用 useState 维护 list
+  const [commentList, setCommentList] = useState(_.orderBy(list, 'like', 'desc'));
+
+  // 删除功能
+  const handleDel = (id) => {
+    // 对 commentList 进行过滤
+    setCommentList(commentList.filter(item => item.rpid !== id));
+  };
+
+  // tab 切换功能
+  // 1.点击谁就把谁的 type 记录下来
+  // 2.通过记录 type 和每一项遍历时的 type 做匹配 控制激活类名的显示
+  const [type, setType] = useState('hot');
+  const handleTabChange = (type) => {
+    console.log(type);
+    setType(type);
+    // 基于列表的排序
+    if (type === 'hot') {
+      // 根据点赞数量排序
+      // lodash
+      setCommentList(_.orderBy(commentList, 'like', 'desc'));
+    } else {
+      // 根据创建时间排序
+      setCommentList(_.orderBy(commentList, 'ctime', 'desc'))
+    }
+  };
+
+  return (
+    <div className="app">
+      {/* 导航 Tab */}
+      <div className="reply-navigation">
+        <ul className="nav-bar">
+          <li className="nav-title">
+            <span className="nav-title-text">评论</span>
+            {/* 评论数量 */}
+            <span className="total-reply">{10}</span>
+          </li>
+          <li className="nav-sort">
+            {/* 高亮类名： active */}
+            {tabs.map(item =>
+                <span key={item.type}
+                      onClick={() => handleTabChange(item.type)}
+                      className={`nav-item ${type === item.type && 'active'}`}>
+                  {item.text}
+                </span>)}
+          </li>
+        </ul>
+      </div>
+
+      <div className="reply-wrap">
+        {/* 发表评论 */}
+        <div className="box-normal">
+          {/* 当前用户头像 */}
+          <div className="reply-box-avatar">
+            <div className="bili-avatar">
+              <img className="bili-avatar-img" src={avatar} alt="用户头像" />
+            </div>
+          </div>
+          <div className="reply-box-wrap">
+            {/* 评论框 */}
+            <textarea
+              className="reply-box-textarea"
+              placeholder="发一条友善的评论"
+            />
+            {/* 发布按钮 */}
+            <div className="reply-box-send">
+              <div className="send-text">发布</div>
+            </div>
+          </div>
+        </div>
+        {/* 评论列表 */}
+        <div className="reply-list">
+          {/* 评论项 */}
+          {commentList.map(item => (
+              <div key={item.rpid} className="reply-item">
+                {/* 头像 */}
+                <div className="root-reply-avatar">
+                  <div className="bili-avatar">
+                    <img
+                        className="bili-avatar-img"
+                        alt=""
+                        src={item.user.avatar}
+                    />
+                  </div>
+                </div>
+
+                <div className="content-wrap">
+                  {/* 用户名 */}
+                  <div className="user-info">
+                    <div className="user-name">{item.user.uname}</div>
+                  </div>
+                  {/* 评论内容 */}
+                  <div className="root-reply">
+                    <span className="reply-content">{item.content}</span>
+                    <div className="reply-info">
+                      {/* 评论时间 */}
+                      <span className="reply-time">{item.ctime}</span>
+                      {/* 评论数量 */}
+                      <span className="reply-time">点赞数:{item.like}</span>
+                      {/*条件：user.id === item.user.id*/}
+                      {user.uid === item.user.uid  && <span className="delete-btn" onClick={() => handleDel(item.rpid)}>删除</span>}
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ))}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
+```
+
+## 8. classnams 优化类名控制
+
+classnams 是一个简单的 JS 库，可以非常方便的通过条件动态控制 class 类名的显示
+
+以前出现的问题：
+
+![image-20240707135835054](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707135835.png)
+
+语法：key 表示要控制的类名，value 表示条件，true 的时候类名就会显示
+
+
+
+### 使用
+
+安装：
+
+```bash
+npm install classnames
+```
+
+引入：
+
+```js
+import classNames from "classnames";
+```
+
+用法：
+
+```jsx
+    <span key={item.type}
+      	onClick={() => handleTabChange(item.type)}
+      	className={classNames('nav-item', {active: type === item.type})}>
+      	{item.text}
+    </span>)}
+```
+
+## 9. 受表单控制项
+
+概念：使用 React 组件的状态（useState）控制表单状态
+
+![image-20240707141640229](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707141640.png)
+
+App.js
+
+```react
+// 项目的根组件
+// App -> index.js -> public/index.html(root)  => App 根组件被导入到 index.js，然后渲染到 index.html 的 root 节点上
+
+// 1.声明一个 react 状态 - useState
+// 2.核心绑定流程
+// 2.1通过 value 属性绑定 react 状态
+// 2.2绑定 onChange 事件，通过事件参数 e 拿到输入框最新值，反向修改 react 状态
+
+import {useState} from "react";
+
+function App() {
+
+   const [value, setValue] =  useState();
+
+  return (
+    <div className="App">
+        <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            type='text'
+        />
+    </div>
+  );
+}
+
+export default App;
+
+```
+
+
+
+## 10. React 中获取DOM
+
+在 React 中获取/操作 DOM，需要使用 useRef 钩子函数，分为两步：
+
+1. 使用 useRef 创建 ref 对象，并与 JSX 绑定
+2. 在 DOM 可用/DOM 渲染完毕时，通过 inputRef.current 拿到 DOM 对象
+
+App.js：
+
+```react
+import React, { useRef } from "react";
+
+function App() {
+    const inputRef = useRef(null);
+
+    const showDom = () => {
+        console.log(inputRef.current);
+    };
+
+    const setInputValue = () => {
+        inputRef.current.value = '新的值';
+    };
+
+    const focusInput = () => {
+        inputRef.current.focus();
+    };
+
+    const selectInputText = () => {
+        inputRef.current.select();
+    };
+
+    const addClassToInput = () => {
+        inputRef.current.classList.add('new-class');
+    };
+
+    const removeClassFromInput = () => {
+        inputRef.current.classList.remove('new-class');
+    };
+
+    const addEventListenerToInput = () => {
+        inputRef.current.addEventListener('input', (event) => {
+            console.log('Input changed:', event.target.value);
+        });
+    };
+
+    return (
+        <div className="App">
+            <input ref={inputRef} type='text'/>
+            <button onClick={showDom}>获取 dom</button>
+            <button onClick={setInputValue}>设置值</button>
+            <button onClick={focusInput}>聚焦</button>
+            <button onClick={selectInputText}>选择文本</button>
+            <button onClick={addClassToInput}>添加类</button>
+            <button onClick={removeClassFromInput}>移除类</button>
+            <button onClick={addEventListenerToInput}>添加事件监听器</button>
+        </div>
+    );
+}
+
+export default App;
+```
+
+## 11.B 站评论优化
+
+### 11.1 发表评论
+
+```react
+import './App.scss'
+import avatar from './images/bozai.png'
+import {useState} from "react";
+import _ from 'lodash';
+import classNames from "classnames";
+/**
+ * 评论列表的渲染和操作
+ *
+ * 1. 根据状态渲染评论列表
+ * 2. 删除评论
+ */
+
+// 评论列表数据
+const list = [
+  {
+    // 评论id
+    rpid: 3,
+    // 用户信息
+    user: {
+      uid: '13258165',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '周杰伦',
+    },
+    // 评论内容
+    content: '哎哟，不错哦',
+    // 评论时间
+    ctime: '10-20 08:15',
+    like: 38,
+  },
+  {
+    rpid: 2,
+    user: {
+      uid: '36080105',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '许嵩',
+    },
+    content: '我寻你千百度 日出到迟暮',
+    ctime: '09-13 11:29',
+    like: 88,
+  },
+  {
+    rpid: 1,
+    user: {
+      uid: '30009257',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '黑马前端',
+    },
+    content: '学前端就来黑马',
+    ctime: '10-19 09:00',
+    like: 66,
+  },
+]
+
+
+// 当前登录用户信息
+const user = {
+  // 用户id
+  uid: '30009257',
+  // 用户头像
+  avatar,
+  // 用户昵称
+  uname: '黑马前端',
+}
+
+/**
+ * 导航 Tab 的渲染和操作
+ *
+ * 1. 渲染导航 Tab 和高亮
+ * 2. 评论列表排序
+ *  最热 => 喜欢数量降序
+ *  最新 => 创建时间降序
+ */
+
+// 导航 Tab 数组
+const tabs = [
+  { type: 'hot', text: '最热' },
+  { type: 'time', text: '最新' },
+]
+
+const App = () => {
+
+  // 渲染评论列表
+  // 1.使用 useState 维护 list
+  const [commentList, setCommentList] = useState(_.orderBy(list, 'like', 'desc'));
+
+  // 删除功能
+  const handleDel = (id) => {
+    // 对 commentList 进行过滤
+    setCommentList(commentList.filter(item => item.rpid !== id));
+  };
+
+  // tab 切换功能
+  // 1.点击谁就把谁的 type 记录下来
+  // 2.通过记录 type 和每一项遍历时的 type 做匹配 控制激活类名的显示
+  const [type, setType] = useState('hot');
+  const handleTabChange = (type) => {
+    console.log(type);
+    setType(type);
+    // 基于列表的排序
+    if (type === 'hot') {
+      // 根据点赞数量排序
+      // lodash
+      setCommentList(_.orderBy(commentList, 'like', 'desc'));
+    } else {
+      // 根据创建时间排序
+      setCommentList(_.orderBy(commentList, 'ctime', 'desc'))
+    }
+  };
+
+  // 发表评论
+  const [content, setContent] = useState('');
+  const handlePublish = () => {
+    setCommentList([
+      ...commentList,
+      {
+        rpid: 4,
+        user: {
+          uid: '30009257',
+          avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+          uname: '黑马前端',
+        },
+        content: content,
+        ctime: '10-19 09:00',
+        like: 80,
+      }
+      ]);
+  };
+
+  return (
+    <div className="app">
+      {/* 导航 Tab */}
+      <div className="reply-navigation">
+        <ul className="nav-bar">
+          <li className="nav-title">
+            <span className="nav-title-text">评论</span>
+            {/* 评论数量 */}
+            <span className="total-reply">{10}</span>
+          </li>
+          <li className="nav-sort">
+            {/* 高亮类名： active */}
+            {tabs.map(item =>
+                <span key={item.type}
+                      onClick={() => handleTabChange(item.type)}
+                      className={classNames('nav-item', {active: type === item.type})}>
+                  {item.text}
+                </span>)
+            }
+          </li>
+        </ul>
+      </div>
+
+      <div className="reply-wrap">
+        {/* 发表评论 */}
+        <div className="box-normal">
+          {/* 当前用户头像 */}
+          <div className="reply-box-avatar">
+            <div className="bili-avatar">
+              <img className="bili-avatar-img" src={avatar} alt="用户头像" />
+            </div>
+          </div>
+          <div className="reply-box-wrap">
+            {/* 评论框 */}
+            <textarea
+              className="reply-box-textarea"
+              placeholder="发一条友善的评论"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+            {/* 发布按钮 */}
+            <div className="reply-box-send">
+              <div className="send-text" onClick={handlePublish}>发布</div>
+            </div>
+          </div>
+        </div>
+        {/* 评论列表 */}
+        <div className="reply-list">
+          {/* 评论项 */}
+          {commentList.map(item => (
+              <div key={item.rpid} className="reply-item">
+                {/* 头像 */}
+                <div className="root-reply-avatar">
+                  <div className="bili-avatar">
+                    <img
+                        className="bili-avatar-img"
+                        alt=""
+                        src={item.user.avatar}
+                    />
+                  </div>
+                </div>
+
+                <div className="content-wrap">
+                  {/* 用户名 */}
+                  <div className="user-info">
+                    <div className="user-name">{item.user.uname}</div>
+                  </div>
+                  {/* 评论内容 */}
+                  <div className="root-reply">
+                    <span className="reply-content">{item.content}</span>
+                    <div className="reply-info">
+                      {/* 评论时间 */}
+                      <span className="reply-time">{item.ctime}</span>
+                      {/* 评论数量 */}
+                      <span className="reply-time">点赞数:{item.like}</span>
+                      {/*条件：user.id === item.user.id*/}
+                      {user.uid === item.user.uid  && <span className="delete-btn" onClick={() => handleDel(item.rpid)}>删除</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ))}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
+```
+
+![image-20240707150807010](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707150807.png)
+
+**uuid 库**
+
+安装：
+
+```bash
+npm install uuid
+```
+
+引入：
+
+```js
+import {v4 as uuidV4} from 'uuid'
+uuidV4(); // 使用
+```
+
+
+
+**dayjs 库**
+
+安装：
+
+```bash
+npm install dayjs
+```
+
+引入：
+
+```js
+import dayjs from 'dayjs'
+dayjs() // 使用
+```
+
+### 11.2 发表评论后清除输入框并聚焦
+
+思路：
+
+1. 设置输入框的 useState 的 setContent 为空
+2. 利用 useRef 获取 dom 元素，再调用 focus 方法
+
+App.js：
+
+```react
+import './App.scss'
+import avatar from './images/bozai.png'
+import {useRef, useState} from "react";
+import _ from 'lodash';
+import classNames from "classnames";
+import {v4 as uuidV4} from 'uuid'
+import dayjs from "dayjs";
+
+/**
+ * 评论列表的渲染和操作
+ *
+ * 1. 根据状态渲染评论列表
+ * 2. 删除评论
+ */
+
+// 评论列表数据
+const list = [
+  {
+    // 评论id
+    rpid: 3,
+    // 用户信息
+    user: {
+      uid: '13258165',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '周杰伦',
+    },
+    // 评论内容
+    content: '哎哟，不错哦',
+    // 评论时间
+    ctime: '10-20 08:15',
+    like: 38,
+  },
+  {
+    rpid: 2,
+    user: {
+      uid: '36080105',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '许嵩',
+    },
+    content: '我寻你千百度 日出到迟暮',
+    ctime: '09-13 11:29',
+    like: 88,
+  },
+  {
+    rpid: 1,
+    user: {
+      uid: '30009257',
+      avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+      uname: '黑马前端',
+    },
+    content: '学前端就来黑马',
+    ctime: '10-19 09:00',
+    like: 66,
+  },
+]
+
+
+// 当前登录用户信息
+const user = {
+  // 用户id
+  uid: '30009257',
+  // 用户头像
+  avatar,
+  // 用户昵称
+  uname: '黑马前端',
+}
+
+/**
+ * 导航 Tab 的渲染和操作
+ *
+ * 1. 渲染导航 Tab 和高亮
+ * 2. 评论列表排序
+ *  最热 => 喜欢数量降序
+ *  最新 => 创建时间降序
+ */
+
+// 导航 Tab 数组
+const tabs = [
+  { type: 'hot', text: '最热' },
+  { type: 'time', text: '最新' },
+]
+
+const App = () => {
+
+  // 渲染评论列表
+  // 1.使用 useState 维护 list
+  const [commentList, setCommentList] = useState(_.orderBy(list, 'like', 'desc'));
+
+  const inputRef = useRef(null);
+
+  // 删除功能
+  const handleDel = (id) => {
+    // 对 commentList 进行过滤
+    setCommentList(commentList.filter(item => item.rpid !== id));
+  };
+
+  // tab 切换功能
+  // 1.点击谁就把谁的 type 记录下来
+  // 2.通过记录 type 和每一项遍历时的 type 做匹配 控制激活类名的显示
+  const [type, setType] = useState('hot');
+  const handleTabChange = (type) => {
+    console.log(type);
+    setType(type);
+    // 基于列表的排序
+    if (type === 'hot') {
+      // 根据点赞数量排序
+      // lodash
+      setCommentList(_.orderBy(commentList, 'like', 'desc'));
+    } else {
+      // 根据创建时间排序
+      setCommentList(_.orderBy(commentList, 'ctime', 'desc'))
+    }
+  };
+
+  // 发表评论
+  const [content, setContent] = useState('');
+  const handlePublish = () => {
+    setCommentList([
+      ...commentList,
+      {
+        rpid: uuidV4(),
+        user: {
+          uid: '30009257',
+          avatar: 'https://www.keaitupian.cn/cjpic/frombd/0/253/936677050/470164789.jpg',
+          uname: '黑马前端',
+        },
+        content: content,
+        ctime: dayjs(new Date()).format('MM-DD hh:mm'),
+        like: 80,
+      }
+      ]);
+    // 1.清楚输入框内容
+    setContent('')
+    // 2.重新聚焦
+    inputRef.current.focus();
+  };
+
+  return (
+    <div className="app">
+      {/* 导航 Tab */}
+      <div className="reply-navigation">
+        <ul className="nav-bar">
+          <li className="nav-title">
+            <span className="nav-title-text">评论</span>
+            {/* 评论数量 */}
+            <span className="total-reply">{10}</span>
+          </li>
+          <li className="nav-sort">
+            {/* 高亮类名： active */}
+            {tabs.map(item =>
+                <span key={item.type}
+                      onClick={() => handleTabChange(item.type)}
+                      className={classNames('nav-item', {active: type === item.type})}>
+                  {item.text}
+                </span>)
+            }
+          </li>
+        </ul>
+      </div>
+
+      <div className="reply-wrap">
+        {/* 发表评论 */}
+        <div className="box-normal">
+          {/* 当前用户头像 */}
+          <div className="reply-box-avatar">
+            <div className="bili-avatar">
+              <img className="bili-avatar-img" src={avatar} alt="用户头像" />
+            </div>
+          </div>
+          <div className="reply-box-wrap">
+            {/* 评论框 */}
+            <textarea
+              className="reply-box-textarea"
+              placeholder="发一条友善的评论"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              ref={inputRef}
+            />
+            {/* 发布按钮 */}
+            <div className="reply-box-send">
+              <div className="send-text" onClick={handlePublish}>发布</div>
+            </div>
+          </div>
+        </div>
+        {/* 评论列表 */}
+        <div className="reply-list">
+          {/* 评论项 */}
+          {commentList.map(item => (
+              <div key={item.rpid} className="reply-item">
+                {/* 头像 */}
+                <div className="root-reply-avatar">
+                  <div className="bili-avatar">
+                    <img
+                        className="bili-avatar-img"
+                        alt=""
+                        src={item.user.avatar}
+                    />
+                  </div>
+                </div>
+
+                <div className="content-wrap">
+                  {/* 用户名 */}
+                  <div className="user-info">
+                    <div className="user-name">{item.user.uname}</div>
+                  </div>
+                  {/* 评论内容 */}
+                  <div className="root-reply">
+                    <span className="reply-content">{item.content}</span>
+                    <div className="reply-info">
+                      {/* 评论时间 */}
+                      <span className="reply-time">{item.ctime}</span>
+                      {/* 评论数量 */}
+                      <span className="reply-time">点赞数:{item.like}</span>
+                      {/*条件：user.id === item.user.id*/}
+                      {user.uid === item.user.uid  && <span className="delete-btn" onClick={() => handleDel(item.rpid)}>删除</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ))}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
+```
+
+## 12. 组件间通信
+
+### 父传子 props
+
+**传递步骤**：
+
+1.父组件传递数据，子组件标签身上绑定属性
+2.子组件接收数据，props 参数
+
+**父传子 demo：**
+
+App.js：
+
+```react
+import React from "react";
+
+// 父传子
+// 1.父组件传递数据，子组件标签身上绑定属性
+// 2.子组件接收数据，props 参数
+function Son (props) {
+    // props：对象包含了父组件传递过来的所有数据
+    console.log(props);
+    return <div>this is son, father's param is {props.name}</div>;
+}
+
+function App() {
+
+    const name = 'this is app name';
+
+    return (
+        <div className="App">
+            <Son name={name} />
+        </div>
+    );
+}
+
+export default App;
+```
+
+小 demo：
+
+App.js：
+
+```react
+import React from "react";
+
+// 父传子
+// 1.父组件传递数据，子组件标签身上绑定属性
+// 2.子组件接收数据，props 参数
+function Son (props) {
+    // props：对象包含了父组件传递过来的所有数据
+    console.log(props);
+    return <div>this is son, father's param is {props.name}</div>;
+}
+
+function App() {
+
+    const name = 'this is app name';
+
+    return (
+        <div className="App">
+            <Son
+                name={name}
+                age={18}
+                isTrue={false}
+                list={['vue', 'react']}
+                cb={() => console.log(123)}
+                child={<span>this is span</span>}
+            />
+        </div>
+    );
+}
+
+export default App;
+```
+
+> **注意**：
+>
+> 1. 父组件几乎可以给子组件传任何东西，包括布尔，数值，数组，对象和函数等
+> 2. 但是子组件不可修改父组件传递的属性，谁传递的谁修改
+
+
+
+### 父传子 特殊的 prop children
+
+组件包裹传递
+
+App.js：
+
+```react
+import React from "react";
+
+// 父传子
+// 1.父组件传递数据，子组件标签身上绑定属性
+// 2.子组件接收数据，props 参数
+function Son (props) {
+    console.log(props)
+    return <div>this is son, {props.children}</div>
+}
+
+function App() {
+    return (
+        <div className="App">
+            <Son>
+                <span>this is span</span>
+            </Son>
+        </div>
+    );
+}
+
+export default App;
+```
+
+显示：this is son,this is span
+
+### 子传父
+
+思路：子组件调用父组件中的函数并传递参数
+
+App.js：
+
+```react
+import React, {useState} from "react";
+
+// 核心：在子组件中调用父组件中的函数并传递实参
+function Son ({onGetSonMsg}) {
+    const sonMsg = 'this is son msg';
+    return (
+        <div>
+            this is son
+            <button onClick={() => onGetSonMsg(sonMsg)}>sendMsg</button>
+        </div>
+    );
+}
+
+function App() {
+    const [msg, setMsg] = useState('');
+    const getMsg = (msg) => {
+        console.log(msg);
+        setMsg(msg);
+    };
+    return (
+        <div className="App">
+            this is App, {msg}
+            <Son onGetSonMsg={getMsg} />
+        </div>
+    );
+}
+
+export default App;
+```
+
+### 使用状态提升实现兄弟组件通信
+
+思路：借助“状态提升”机制，通过父组件进行兄弟组件之间的数据传递
+
+![image-20240707205817066](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707205817.png)
+
+App.js：
+
+```react
+import React, {useState} from "react";
+
+// 1.子传父 A -> App
+// 2.子传父 B -> App
+function A ({onGetAName}) {
+    // A 组件中的数据
+    const name = 'this is A name';
+    return (
+        <div>
+            this is A component
+            <button onClick={() => onGetAName(name)}>send</button>
+        </div>
+    );
+}
+
+function B (props) {
+    return (
+        <div>
+            this is B component, {props.name}
+        </div>
+    );
+}
+
+function App() {
+
+    const [name, setName] = useState('');
+    const getAName = (name) => {
+        console.log(name);
+        setName(name);
+    };
+
+    return (
+        <div className="App">
+            this is App
+            <A onGetAName={getAName}/>
+            <B name={name}/>
+        </div>
+    );
+}
+
+export default App;
+```
+
+### 使用 context 机制跨层级组件通信
+
+实现步骤：
+
+1. 使用createContext方法创建一个上下文对象Ctx
+2. 在顶层组件（App）中通过Ctx.Provider组件提供数据
+3. 在底层组件（B）中通过useContext钩子函数获取消费数据
+
+![image-20240707212308649](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707212308.png)
+
+App.js：
+
+```react
+import React, {createContext, useContext} from "react";
+
+// App -> A -> B
+
+// 1.createContext 方法创建一个上下文对象
+const MsgContext = createContext();
+// 2.在顶层组件通过 Provider 组件提供数据
+// 3.在底层组件通过 useContext 钩子函数使用数据
+
+function A () {
+    return (
+        <div>
+            this is A component
+            <B />
+        </div>
+    );
+}
+
+function B () {
+    const msg = useContext(MsgContext);
+    return (
+        <div>
+            this is B component, {msg}
+        </div>
+    );
+}
+
+function App() {
+    const msg = 'this is app msg';
+    return (
+        <div className="App">
+            <MsgContext.Provider value={msg}>
+                this is App
+                <A />
+            </MsgContext.Provider>
+        </div>
+    );
+}
+
+export default App;
+```
+
+结果：
+
+![image-20240707213150328](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707213150.png)
+
+使用场景：
+
+![image-20240707213956128](https://hejiajun-img-bucket.oss-cn-wuhan-lr.aliyuncs.com/img/20240707213956.png)
