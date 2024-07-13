@@ -1,38 +1,29 @@
-import React, {createContext, useContext} from "react";
+import React, {useEffect, useState} from "react";
 
-// App -> A -> B
 
-// 1.createContext 方法创建一个上下文对象
-const MsgContext = createContext();
-// 2.在顶层组件通过 Provider 组件提供数据
-// 3.在底层组件通过 useContext 钩子函数使用数据
+// 问题：布尔切换逻辑与当前组件耦合在一起，不方便使用
+// 解决思路：自定义 hook
 
-function A () {
-    return (
-        <div>
-            this is A component
-            <B />
-        </div>
-    );
-}
+function useToggle() {
+    // 可复用的代码逻辑
+    const [value, setValue] = useState(true);
 
-function B () {
-    const msg = useContext(MsgContext);
-    return (
-        <div>
-            this is B component
-        </div>
-    );
+    const toggle = () => setValue(!value);
+    // 哪些状态和回调函数需要在其他组件使用 return
+    return {
+        value,
+        toggle
+    }
 }
 
 function App() {
-    const msg = 'this is app msg';
+
+    const { value, toggle } = useToggle();
+
     return (
         <div className="App">
-            <MsgContext.Provider value={msg}>
-                this is App
-                <A msg={msg}/>
-            </MsgContext.Provider>
+            {value && <div>this is div</div>}
+            <button onClick={toggle}>toggle</button>
         </div>
     );
 }
